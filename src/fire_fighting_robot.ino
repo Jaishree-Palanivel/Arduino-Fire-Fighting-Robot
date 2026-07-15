@@ -1,140 +1,146 @@
-#include <Servo.h>
+// --- Macro Definitions (Standard C Practice) ---
+#define MOTOR_LEFT_FWD 2      // IN1
+#define MOTOR_LEFT_REV 3      // IN2
+#define MOTOR_RIGHT_FWD 4     // IN3
+#define MOTOR_RIGHT_REV 5     // IN4
 
-// --- Pin Definitions ---
-// L298N Motor Driver Pins
-const int motorLeftFwd = 2;   // IN1
-const int motorLeftRev = 3;   // IN2
-const int motorRightFwd = 4;  // IN3
-const int motorRightRev = 5;  // IN4
+#define PUMP_RELAY_PIN 6 
+#define SERVO_PIN 11
 
-// Water Pump Relay Pin
-const int pumpRelayPin = 6; 
+#define FLAME_SENSOR_LEFT A0
+#define FLAME_SENSOR_CENTER A1
+#define FLAME_SENSOR_RIGHT A2
 
-// Servo Motor SG90 Pin
-const int servoPin = 11;
+#define FIRE_THRESHOLD 400 
+#define SAFE_STOP_THRESHOLD 150 
 
-// Flame Sensor Analog Pins
-const int flameSensorLeft = A0;
-const int flameSensorCenter = A1;
-const int flameSensorRight = A2;
-
-// --- Threshold Values ---
-// Lower analog values indicate higher fire intensity.
-// Fire detected if sensor reading drops below this threshold.
-const int fireThreshold = 400; 
-
-// Safe stopping threshold (Very close/immediate proximity)
-// Below this, the robot halts to avoid burning.
-const int safeStopThreshold = 150; 
-
-Servo nozzleServo;
+// --- Function Prototypes (Strict C Standard) ---
+void moveForward(void);
+void turnLeft(void);
+void turnRight(void);
+void stopRobot(void);
+void setServoAngle(int angle);
+void extinguishFire(void);
 
 void setup() {
-  // Initialize Serial Monitor for debugging
   Serial.begin(9600);
 
-  // Configure Motor Pins as Outputs
-  pinMode(motorLeftFwd, OUTPUT);
-  pinMode(motorLeftRev, OUTPUT);
-  pinMode(motorRightFwd, OUTPUT);
-  pinMode(motorRightRev, OUTPUT);
+  // Set Pin Modes
+  pinMode(MOTOR_LEFT_FWD, OUTPUT);
+  pinMode(MOTOR_LEFT_REV, OUTPUT);
+  pinMode(MOTOR_RIGHT_FWD, OUTPUT);
+  pinMode(MOTOR_RIGHT_REV, OUTPUT);
+  pinMode(PUMP_RELAY_PIN, OUTPUT);
+  pinMode(SERVO_PIN, OUTPUT);
 
-  // Configure Relay Pin as Output
-  pinMode(pumpRelayPin, OUTPUT);
-  
-  // Turn OFF pump initially (Relay active LOW or HIGH depends on your module)
-  // Standard 5V relay module is active LOW, so HIGH keeps it OFF.
-  digitalWrite(pumpRelayPin, HIGH); 
+  // Ensure pump is initially OFF (Active-LOW relay)
+  digitalWrite(PUMP_RELAY_PIN, HIGH); 
 
-  // Initialize Servo
-  nozzleServo.attach(servoPin);
-  nozzleServo.write(90); // Center the nozzle pointing forward
+  // Point nozzle forward (90 degrees)
+  setServoAngle(90); 
 }
 
 void loop() {
-  // Read analog values from flame sensors
-  int valLeft = analogRead(flameSensorLeft);
-  int valCenter = analogRead(flameSensorCenter);
-  int valRight = analogRead(flameSensorRight);
+  // Read analog inputs
+  int valLeft = analogRead(FLAME_SENSOR_LEFT);
+  int valCenter = analogRead(FLAME_SENSOR_CENTER);
+  int valRight = analogRead(FLAME_SENSOR_RIGHT);
 
-  // Print values to Serial Monitor for adjustment
+  // Monitor values
   Serial.print("L: "); Serial.print(valLeft);
   Serial.print(" | C: "); Serial.print(valCenter);
   Serial.print(" | R: "); Serial.println(valRight);
 
-  // Check if center sensor is dangerously close to the fire
-  if (valCenter < safeStopThreshold && valCenter > 0) {
+  // Decision control logic
+  if (valCenter < SAFE_STOP_THRESHOLD && valCenter > 0) {
     stopRobot();
     extinguishFire();
   }
-  // No immediate threat close-by, check directions to navigate
-  else if (valCenter < fireThreshold && valCenter < valLeft && valCenter < valRight) {
-    // Fire is directly ahead but at a distance -> Move Forward
+  else if (valCenter < FIRE_THRESHOLD && valCenter < valLeft && valCenter < valRight) {
     moveForward();
   } 
-  else if (valLeft < fireThreshold && valLeft < valRight) {
-    // Fire detected on the left -> Turn Left
+  else if (valLeft < FIRE_THRESHOLD && valLeft < valRight) {
     turnLeft();
   } 
-  else if (valRight < fireThreshold && valRight < valLeft) {
-    // Fire detected on the right -> Turn Right
+  else if (valRight < FIRE_THRESHOLD && valRight < valLeft) {
     turnRight();
   } 
   else {
-    // No fire detected -> Standby / Stop
     stopRobot();
   }
 
-  delay(100); // Small delay to prevent sensor fluctuations
+  delay(100); 
 }
 
-// --- Navigation Functions ---
-void moveForward() {
-  digitalWrite(motorLeftFwd, HIGH);
-  digitalWrite(motorLeftRev, LOW);
-  digitalWrite(motorRightFwd, HIGH);
-  digitalWrite(motorRightRev, LOW);
+// --- Navigation Actuation ---
+void moveForward(void) {
+  digitalWrite(MOTOR_LEFT_FWD, HIGH);
+  digitalWrite(MOTOR_LEFT_REV, LOW);
+  digitalWrite(MOTOR_RIGHT_FWD, HIGH);
+  digitalWrite(MOTOR_RIGHT_REV, LOW);
 }
 
-void turnLeft() {
-  digitalWrite(motorLeftFwd, LOW);
-  digitalWrite(motorLeftRev, HIGH);
-  digitalWrite(motorRightFwd, HIGH);
-  digitalWrite(motorRightRev, LOW);
+void turnLeft(void) {
+  digitalWrite(MOTOR_LEFT_FWD, LOW);
+  digitalWrite(MOTOR_LEFT_REV, HIGH);
+  digitalWrite(MOTOR_RIGHT_FWD, HIGH);
+  digitalWrite(MOTOR_RIGHT_REV, LOW);
 }
 
-void turnRight() {
-  digitalWrite(motorLeftFwd, HIGH);
-  digitalWrite(motorLeftRev, LOW);
-  digitalWrite(motorRightFwd, LOW);
-  digitalWrite(motorRightRev, HIGH);
+void turnRight(void) {
+  digitalWrite(MOTOR_LEFT_FWD, HIGH);
+  digitalWrite(MOTOR_LEFT_REV, LOW);
+  digitalWrite(MOTOR_RIGHT_FWD, LOW);
+  digitalWrite(MOTOR_RIGHT_REV, HIGH);
 }
 
-void stopRobot() {
-  digitalWrite(motorLeftFwd, LOW);
-  digitalWrite(motorLeftRev, LOW);
-  digitalWrite(motorRightFwd, LOW);
-  digitalWrite(motorRightRev, LOW);
+void stopRobot(void) {
+  digitalWrite(MOTOR_LEFT_FWD, LOW);
+  digitalWrite(MOTOR_LEFT_REV, LOW);
+  digitalWrite(MOTOR_RIGHT_FWD, LOW);
+  digitalWrite(MOTOR_RIGHT_REV, LOW);
 }
 
-// --- Fire Suppression Function ---
-void extinguishFire() {
-  // Activate pump (Low triggers typical active-LOW relay modules)
-  digitalWrite(pumpRelayPin, LOW); 
-  delay(500); // Wait for water pressure to build up
-
-  // Sweep the servo to spread the water over the fire area
-  for (int pos = 50; pos <= 130; pos += 2) {
-    nozzleServo.write(pos);
-    delay(15);
+/* 
+ * Pure C implementation of Servo Motor Control
+ * Servos operate on a 50Hz frequency (20ms period). 
+ * Pulse width of 1ms (1000us) represents 0 degrees, and 2ms (2000us) represents 180 degrees.
+ */
+void setServoAngle(int angle) {
+  // Map angle (0 to 180) to pulse width (1000 to 2000 microseconds)
+  long pulseWidth = 1000 + ((long)angle * 1000 / 180); 
+  
+  // Send 10 continuous PWM pulses to give the physical servo motor time to reach the angle
+  for (int i = 0; i < 10; i++) {
+    digitalWrite(SERVO_PIN, HIGH);
+    delayMicroseconds(pulseWidth);
+    digitalWrite(SERVO_PIN, LOW);
+    
+    // Complete the remainder of the 20ms period
+    delayMicroseconds(20000 - pulseWidth); 
   }
-  for (int pos = 130; pos >= 50; pos -= 2) {
-    nozzleServo.write(pos);
-    delay(15);
+}
+
+// --- Suppression System ---
+void extinguishFire(void) {
+  // Turn on pump (Active-LOW)
+  digitalWrite(PUMP_RELAY_PIN, LOW); 
+  delay(500); // Allow pressure to build
+
+  // Manual C Sweep: Left to Right
+  for (int pos = 50; pos <= 130; pos += 5) {
+    setServoAngle(pos);
+    delay(20);
+  }
+  
+  // Manual C Sweep: Right to Left
+  for (int pos = 130; pos >= 50; pos -= 5) {
+    setServoAngle(pos);
+    delay(20);
   }
 
-  // Return nozzle to center and turn off pump
-  nozzleServo.write(90);
-  digitalWrite(pumpRelayPin, HIGH); 
-  delay(1000); // Wait a second before resuming loop
+  // Reset nozzle and turn OFF pump
+  setServoAngle(90);
+  digitalWrite(PUMP_RELAY_PIN, HIGH); 
+  delay(1000); 
 }
